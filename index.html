@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Function Graph & Table Matcher Lab</title>
+    <!-- Tailwind CSS for modern responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        canvas { touch-action: none; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header & Navigation -->
+    <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700/80 sticky top-0 z-30 py-3.5 px-4 sm:px-6 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
+            
+            <div class="flex items-center justify-between w-full md:w-auto gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl text-white shadow-md shadow-indigo-500/20">
+                        <i class="fa-solid fa-chart-line text-xl sm:text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold text-white tracking-wide">Graph & Table Matcher</h1>
+                        <p class="text-xs text-slate-400">Master Functions visually & algebraically</p>
+                    </div>
+                </div>
+
+                <button onclick="openSettingsModal()" class="md:hidden p-2 bg-slate-700/70 hover:bg-slate-600 text-slate-200 rounded-lg text-sm border border-slate-600 transition">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+
+            <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                <div id="timer-container" class="hidden flex-1 md:flex-initial flex items-center gap-3 bg-slate-900/80 border border-slate-700/80 px-3.5 py-1.5 rounded-xl">
+                    <i class="fa-solid fa-stopwatch text-amber-400 animate-pulse text-sm"></i>
+                    <div class="w-24 sm:w-32 bg-slate-800 h-2 rounded-full overflow-hidden border border-slate-700">
+                        <div id="timer-bar" class="bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 h-full w-full transition-all duration-100"></div>
+                    </div>
+                    <span id="timer-text" class="font-mono text-xs font-bold text-amber-300 min-w-[36px]">00s</span>
+                    <span id="multiplier-badge" class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 font-bold">2.0x</span>
+                </div>
+
+                <div class="flex items-center gap-3 bg-slate-950/60 border border-slate-700/60 px-3.5 py-1.5 rounded-xl">
+                    <div class="text-center">
+                        <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Problem</span>
+                        <span id="problem-progress" class="text-xs sm:text-sm font-bold text-indigo-400">1 / 5</span>
+                    </div>
+                    <div class="h-5 w-px bg-slate-700"></div>
+                    <div class="text-center">
+                        <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Streak</span>
+                        <span id="streak-count" class="text-xs sm:text-sm font-bold text-amber-400">0 🔥</span>
+                    </div>
+                    <div class="h-5 w-px bg-slate-700"></div>
+                    <div class="text-center">
+                        <span class="block text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Score</span>
+                        <span id="score-count" class="text-xs sm:text-sm font-bold text-emerald-400">0</span>
+                    </div>
+                </div>
+
+                <button onclick="openSettingsModal()" class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-700/80 hover:bg-slate-600 text-slate-200 rounded-xl text-xs font-medium border border-slate-600 transition">
+                    <i class="fa-solid fa-gear"></i> Config
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto w-full p-4 sm:p-6 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left Column: Visual Display -->
+        <section class="lg:col-span-7 bg-slate-800/80 border border-slate-700 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col items-center">
+            <div class="w-full flex justify-between items-center mb-3">
+                <h2 id="visualizer-heading" class="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                    <i class="fa-solid fa-compass text-indigo-400"></i> Visual Representation
+                </h2>
+                <div class="flex items-center gap-2 text-[11px] text-slate-400 bg-slate-900/60 px-2.5 py-1 rounded-md border border-slate-700">
+                    <span>X: [-5, 5]</span>
+                    <span>•</span>
+                    <span>Y: [-5, 5]</span>
+                </div>
+            </div>
+
+            <div id="visual-display-container" class="relative w-full aspect-square max-w-[500px] bg-slate-950 rounded-xl overflow-hidden border border-slate-700/80 shadow-inner flex items-center justify-center p-3">
+                <canvas id="graphCanvas" class="w-full h-full block cursor-crosshair hidden"></canvas>
+                <div id="tableContainer" class="w-full h-full overflow-y-auto space-y-4 p-2 flex flex-col justify-center hidden"></div>
+            </div>
+
+            <div id="legend-zones-container" class="w-full mt-4 space-y-2">
+                <p id="legend-instructions" class="text-xs text-slate-400 font-medium mb-1">Target Items:</p>
+                <div id="targets-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+            </div>
+        </section>
+
+        <!-- Right Column: Drag/Type Controls -->
+        <section class="lg:col-span-5 bg-slate-800/80 border border-slate-700 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col justify-between h-full min-h-[460px]">
+            <div>
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-700">
+                    <h2 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-keyboard text-indigo-400"></i> <span id="input-section-title">Match Functions</span>
+                    </h2>
+                    <span id="config-badge" class="text-[11px] bg-indigo-900/50 text-indigo-300 border border-indigo-700/50 px-2.5 py-0.5 rounded-full font-medium">3 Graphs</span>
+                </div>
+
+                <!-- DRAG AND DROP MODE -->
+                <div id="drag-mode-container" class="space-y-3">
+                    <p class="text-xs text-slate-400">
+                        Drag each function card into its corresponding graph/table slot (or tap a card, then tap a target slot):
+                    </p>
+                    <div id="cards-container" class="space-y-2.5 min-h-[160px] p-2.5 bg-slate-950/60 border border-slate-700/60 rounded-xl" ondragover="handleDragOver(event)" ondrop="handleDropToPool(event)"></div>
+                </div>
+
+                <!-- RICH TYPING MODE -->
+                <div id="typing-mode-container" class="hidden space-y-4">
+                    <p class="text-xs text-slate-400">
+                        Select an item tab, then type its equation using the keypad below:
+                    </p>
+
+                    <div id="typing-tabs" class="flex gap-2"></div>
+
+                    <div class="bg-slate-950 border-2 border-indigo-500/80 rounded-xl p-3 shadow-md">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+                            <span class="text-xs font-semibold text-slate-400">Active Equation Editor</span>
+                            <span id="active-item-badge" class="text-xs px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">Item A</span>
+                        </div>
+                        
+                        <div id="math-preview-box" class="min-h-[48px] bg-slate-900 border border-slate-800 rounded-lg p-2.5 font-mono text-base sm:text-lg text-slate-100 flex items-center justify-between overflow-x-auto tracking-wide">
+                            <span id="math-display-text" class="text-indigo-300 font-bold">y = </span>
+                            <span id="cursor" class="inline-block w-2 h-5 bg-indigo-400 animate-pulse ml-0.5"></span>
+                        </div>
+
+                        <div class="grid grid-cols-5 gap-1.5 mt-3">
+                            <button onclick="keypadInsert('x')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-mono font-bold text-sm text-slate-200 border border-slate-700">x</button>
+                            <button onclick="keypadInsert('²')" class="p-2 bg-indigo-900/50 hover:bg-indigo-800/60 rounded-lg font-mono font-bold text-sm text-indigo-200 border border-indigo-700/50">x²</button>
+                            <button onclick="keypadInsert('+')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-mono font-bold text-sm text-slate-200 border border-slate-700">+</button>
+                            <button onclick="keypadInsert('-')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-mono font-bold text-sm text-slate-200 border border-slate-700">-</button>
+                            <button onclick="keypadInsert('·')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-mono font-bold text-sm text-slate-200 border border-slate-700">·</button>
+                            
+                            <button onclick="keypadInsert('1')" class="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-lg font-mono text-sm text-slate-300">1</button>
+                            <button onclick="keypadInsert('2')" class="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-lg font-mono text-sm text-slate-300">2</button>
+                            <button onclick="keypadInsert('3')" class="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-lg font-mono text-sm text-slate-300">3</button>
+                            <button onclick="keypadInsert('4')" class="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-lg font-mono text-sm text-slate-300">4</button>
+                            <button onclick="keypadInsert('5')" class="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-lg font-mono text-sm text-slate-300">5</button>
+
+                            <button onclick="keypadBackspace()" class="col-span-2 p-2 bg-amber-900/40 hover:bg-amber-800/50 text-amber-300 rounded-lg font-mono text-xs font-bold border border-amber-700/50 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-backspace"></i> Backspace
+                            </button>
+                            <button onclick="keypadClear()" class="col-span-3 p-2 bg-rose-900/40 hover:bg-rose-800/50 text-rose-300 rounded-lg font-mono text-xs font-bold border border-rose-700/50">Clear All</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback & Actions -->
+            <div class="mt-4 pt-3 border-t border-slate-700 space-y-3">
+                <div id="feedback-box" class="hidden p-3.5 rounded-xl text-xs sm:text-sm font-medium border flex items-start gap-2.5 transition-all">
+                    <i id="feedback-icon" class="fa-solid text-base mt-0.5"></i>
+                    <div id="feedback-text" class="space-y-1 w-full overflow-hidden"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="check-btn" onclick="checkAnswers()" class="w-full bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl transition duration-150 shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-check"></i> Submit
+                    </button>
+                    <button id="next-btn" onclick="nextProblem()" class="w-full bg-slate-700 hover:bg-slate-600 active:bg-slate-800 text-slate-200 font-semibold py-2.5 px-4 rounded-xl transition duration-150 border border-slate-600 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-arrow-right"></i> Next
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- CONFIGURATION MODAL -->
+    <div id="config-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-5 my-8">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-sliders text-indigo-400 text-lg"></i>
+                    <h3 class="text-lg font-bold text-white">Lab Configuration</h3>
+                </div>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white text-lg p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="config-form" onsubmit="applySettingsFromForm(event)" class="space-y-4 text-xs sm:text-sm">
+                
+                <!-- Polynomial Type Weights -->
+                <div class="space-y-2 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                    <div class="flex justify-between items-center">
+                        <label class="font-semibold text-slate-200">Polynomial Probabilities:</label>
+                        <div class="flex gap-1">
+                            <button type="button" onclick="applyProbPreset('default')" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-indigo-300 hover:bg-slate-700">Default</button>
+                            <button type="button" onclick="applyProbPreset('linear')" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-indigo-300 hover:bg-slate-700">Linear Only</button>
+                            <button type="button" onclick="applyProbPreset('quad')" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-indigo-300 hover:bg-slate-700">Quad Only</button>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="w-32 text-slate-400 font-mono">Order 0 (y = c):</span>
+                            <input type="range" id="p_o0_t1" min="0" max="5" step="1" value="1" oninput="document.getElementById('p_o0_t1_val').textContent=this.value" class="flex-1 accent-indigo-500">
+                            <span id="p_o0_t1_val" class="w-4 font-bold text-indigo-400">1</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-32 text-slate-400 font-mono">Order 1 (y = ax):</span>
+                            <input type="range" id="p_o1_t1" min="0" max="5" step="1" value="2" oninput="document.getElementById('p_o1_t1_val').textContent=this.value" class="flex-1 accent-indigo-500">
+                            <span id="p_o1_t1_val" class="w-4 font-bold text-indigo-400">2</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-32 text-slate-400 font-mono">Order 1 (y = ax + b):</span>
+                            <input type="range" id="p_o1_t2" min="0" max="5" step="1" value="3" oninput="document.getElementById('p_o1_t2_val').textContent=this.value" class="flex-1 accent-indigo-500">
+                            <span id="p_o1_t2_val" class="w-4 font-bold text-indigo-400">3</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-32 text-slate-400 font-mono">Order 2 (y = ax² + c):</span>
+                            <input type="range" id="p_o2_t2" min="0" max="5" step="1" value="3" oninput="document.getElementById('p_o2_t2_val').textContent=this.value" class="flex-1 accent-indigo-500">
+                            <span id="p_o2_t2_val" class="w-4 font-bold text-indigo-400">3</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-32 text-slate-400 font-mono">Order 2 (3 terms):</span>
+                            <input type="range" id="p_o2_t3" min="0" max="5" step="1" value="2" oninput="document.getElementById('p_o2_t3_val').textContent=this.value" class="flex-1 accent-indigo-500">
+                            <span id="p_o2_t3_val" class="w-4 font-bold text-indigo-400">2</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Number of Items -->
+                <div class="space-y-1">
+                    <label class="block font-semibold text-slate-200">Number of Items (1 to 3):</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="p-2.5 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center gap-2 cursor-pointer hover:border-indigo-500">
+                            <input type="radio" name="cfg-graphs" value="1" class="accent-indigo-500"> <span>1 Item</span>
+                        </label>
+                        <label class="p-2.5 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center gap-2 cursor-pointer hover:border-indigo-500">
+                            <input type="radio" name="cfg-graphs" value="2" class="accent-indigo-500"> <span>2 Items</span>
+                        </label>
+                        <label class="p-2.5 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center gap-2 cursor-pointer hover:border-indigo-500">
+                            <input type="radio" name="cfg-graphs" value="3" checked class="accent-indigo-500"> <span>3 Items</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Answers/Mode -->
+                <div class="space-y-1">
+                    <label class="block font-semibold text-slate-200">Choice Cards (0 = Manual Rich Typing):</label>
+                    <select id="cfg-answers" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl p-2.5 focus:outline-none focus:border-indigo-500">
+                        <option value="auto">Default (Match Items)</option>
+                        <option value="0">0 (Manual Formula Typing)</option>
+                        <option value="1">1 Choice</option>
+                        <option value="2">2 Choices</option>
+                        <option value="3">3 Choices</option>
+                    </select>
+                </div>
+
+                <!-- Queue & Timer -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-semibold text-slate-200 mb-1">Queue Size:</label>
+                        <select id="cfg-problems" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl p-2.5">
+                            <option value="3">3 Problems</option>
+                            <option value="5" selected>5 Problems</option>
+                            <option value="8">8 Problems</option>
+                            <option value="10">10 Problems</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-200 mb-1">Timer (Seconds):</label>
+                        <select id="cfg-timer" class="w-full bg-slate-800 border border-slate-700 text-slate-100 rounded-xl p-2.5">
+                            <option value="0" selected>Disabled</option>
+                            <option value="10">10 Seconds</option>
+                            <option value="15">15 Seconds</option>
+                            <option value="20">20 Seconds</option>
+                            <option value="30">30 Seconds</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Representations -->
+                <div class="space-y-2 pt-1 border-t border-slate-800">
+                    <label class="block font-semibold text-slate-200">Representation Format:</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="p-2.5 bg-slate-800 border border-slate-700 rounded-xl flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="cfg-show-table" class="accent-indigo-500 rounded"> <span>Data Table</span>
+                        </label>
+                        <label class="p-2.5 bg-slate-800 border border-slate-700 rounded-xl flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="cfg-show-random" class="accent-indigo-500 rounded"> <span>Randomize Graph/Table</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit & Share Actions -->
+                <div class="pt-3 border-t border-slate-800 flex flex-col sm:flex-row gap-2">
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 font-semibold py-2.5 rounded-xl text-white shadow-lg transition">
+                        Start New Session
+                    </button>
+                    <button type="button" onclick="copyConfigURL()" class="w-full sm:w-auto px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 font-medium py-2.5 rounded-xl text-slate-300 flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-link text-indigo-400"></i> Copy URL
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SUMMARY MODAL -->
+    <div id="summary-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl text-center space-y-5">
+            <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-3xl border border-emerald-500/30">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div>
+                <h3 class="text-2xl font-extrabold text-white">Round Completed!</h3>
+                <p class="text-xs text-slate-400 mt-1">Summary of your session:</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-left">
+                <div class="bg-slate-800/80 border border-slate-700 p-3 rounded-xl">
+                    <span class="block text-[10px] uppercase font-semibold text-slate-400">Total Score</span>
+                    <span id="summary-score" class="text-xl font-black text-emerald-400">0</span>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700 p-3 rounded-xl">
+                    <span class="block text-[10px] uppercase font-semibold text-slate-400">Accuracy</span>
+                    <span id="summary-accuracy" class="text-xl font-black text-indigo-400">0%</span>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700 p-3 rounded-xl">
+                    <span class="block text-[10px] uppercase font-semibold text-slate-400">Correct Items</span>
+                    <span id="summary-correct" class="text-lg font-bold text-slate-200">0 / 0</span>
+                </div>
+                <div class="bg-slate-800/80 border border-slate-700 p-3 rounded-xl">
+                    <span class="block text-[10px] uppercase font-semibold text-slate-400">Avg Time / Problem</span>
+                    <span id="summary-avg-time" class="text-lg font-bold text-amber-300">0.0s</span>
+                </div>
+            </div>
+
+            <div class="pt-2 flex gap-3">
+                <button onclick="restartRun()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 font-bold py-2.5 rounded-xl text-white shadow-lg transition">
+                    Play Again
+                </button>
+                <button onclick="openSettingsModal(); hideSummaryModal();" class="px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 font-semibold py-2.5 rounded-xl text-slate-300 transition">
+                    Configure
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-3 text-center text-xs text-slate-500">
+        Interactive Math Learning Lab • Rendered with HTML5 Canvas & Dynamic Algebra Engine
+    </footer>
+
+    <!-- Main Logic Script -->
+    <script>
+        const ITEM_COLORS = [
+            { id: 'red', name: 'Item A', label: 'Graph A', hex: '#f43f5e', border: 'border-rose-500/50', bg: 'bg-rose-500' },
+            { id: 'blue', name: 'Item B', label: 'Graph B', hex: '#38bdf8', border: 'border-sky-400/50', bg: 'bg-sky-400' },
+            { id: 'green', name: 'Item C', label: 'Graph C', hex: '#34d399', border: 'border-emerald-400/50', bg: 'bg-emerald-400' }
+        ];
+
+        const DOMAIN = { min: -5, max: 5 };
+        const RANGE = { min: -5, max: 5 };
+
+        let CONFIG = {
+            numGraphs: 3,
+            numAnswers: 3,
+            numProblems: 5,
+            timer: 0,
+            showTable: false,
+            showRandom: false,
+            probs: {
+                o0_t1: 1,
+                o1_t1: 2,
+                o1_t2: 3,
+                o2_t2: 3,
+                o2_t3: 2
+            }
+        };
+
+        let problemIndex = 0;
+        let currentFunctions = [];
+        let choiceFunctions = [];
+        let itemRepresentations = [];
+        let assignedColors = [];
+        let placedSlots = {};
+        let userTypedInputs = {};
+        let activeTypingItem = 0;
+
+        let score = 0;
+        let streak = 0;
+        let correctItemsCount = 0;
+        let totalItemsCount = 0;
+        let isEvaluated = false;
+
+        let timerInterval = null;
+        let timeRemaining = 0;
+        let totalTimeSpent = 0;
+
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+
+        window.onload = function () {
+            parseQueryParams();
+            resizeCanvas();
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                drawScene();
+            });
+            startRun();
+        };
+
+        function parseQueryParams() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('number-of-graphs')) {
+                const g = parseInt(params.get('number-of-graphs'), 10);
+                if (g >= 1 && g <= 3) CONFIG.numGraphs = g;
+            }
+            if (params.has('number-of-answers')) {
+                const a = parseInt(params.get('number-of-answers'), 10);
+                if (a >= 0 && a <= 3) CONFIG.numAnswers = a;
+            } else {
+                CONFIG.numAnswers = CONFIG.numGraphs;
+            }
+            if (params.has('number-of-problems')) {
+                const p = parseInt(params.get('number-of-problems'), 10);
+                if (p >= 3 && p <= 10) CONFIG.numProblems = p;
+            }
+            if (params.has('timer')) {
+                const tm = parseInt(params.get('timer'), 10);
+                if (tm === 0 || (tm >= 10 && tm <= 30)) CONFIG.timer = tm;
+            }
+            if (params.has('show-table')) CONFIG.showTable = params.get('show-table') === 'true';
+            if (params.has('show-random')) CONFIG.showRandom = params.get('show-random') === 'true';
+
+            const probKeys = ['o0_t1', 'o1_t1', 'o1_t2', 'o2_t2', 'o2_t3'];
+            const paramNames = ['p_o0_t1', 'p_o1_t1', 'p_o1_t2', 'p_o2_t2', 'p_o2_t3'];
+            paramNames.forEach((param, idx) => {
+                if (params.has(param)) {
+                    const val = parseFloat(params.get(param));
+                    if (!isNaN(val) && val >= 0) CONFIG.probs[probKeys[idx]] = val;
+                }
+            });
+            syncConfigToUI();
+        }
+
+        function syncConfigToUI() {
+            document.querySelectorAll('input[name="cfg-graphs"]').forEach(r => {
+                r.checked = (parseInt(r.value, 10) === CONFIG.numGraphs);
+            });
+            document.getElementById('cfg-answers').value = CONFIG.numAnswers;
+            document.getElementById('cfg-problems').value = CONFIG.numProblems;
+            document.getElementById('cfg-timer').value = CONFIG.timer;
+            document.getElementById('cfg-show-table').checked = CONFIG.showTable;
+            document.getElementById('cfg-show-random').checked = CONFIG.showRandom;
+
+            document.getElementById('p_o0_t1').value = CONFIG.probs.o0_t1;
+            document.getElementById('p_o0_t1_val').textContent = CONFIG.probs.o0_t1;
+            document.getElementById('p_o1_t1').value = CONFIG.probs.o1_t1;
+            document.getElementById('p_o1_t1_val').textContent = CONFIG.probs.o1_t1;
+            document.getElementById('p_o1_t2').value = CONFIG.probs.o1_t2;
+            document.getElementById('p_o1_t2_val').textContent = CONFIG.probs.o1_t2;
+            document.getElementById('p_o2_t2').value = CONFIG.probs.o2_t2;
+            document.getElementById('p_o2_t2_val').textContent = CONFIG.probs.o2_t2;
+            document.getElementById('p_o2_t3').value = CONFIG.probs.o2_t3;
+            document.getElementById('p_o2_t3_val').textContent = CONFIG.probs.o2_t3;
+
+            const modeText = CONFIG.numAnswers === 0 ? 'Manual Typing' : `${CONFIG.numAnswers} Choices`;
+            document.getElementById('config-badge').textContent = `${CONFIG.numGraphs} Items • ${modeText}`;
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+
+        function toCanvasX(x, width) { return ((x - DOMAIN.min) / (DOMAIN.max - DOMAIN.min)) * width; }
+        function toCanvasY(y, height) { return height - ((y - RANGE.min) / (RANGE.max - RANGE.min)) * height; }
+
+        function getRandomInt(min, max, excludeZero = false) {
+            let val;
+            do { val = Math.floor(Math.random() * (max - min + 1)) + min; } while (excludeZero && val === 0);
+            return val;
+        }
+
+        function createFunctionByProbabilities() {
+            const types = [
+                { typeKey: 'o0_t1', weight: CONFIG.probs.o0_t1 },
+                { typeKey: 'o1_t1', weight: CONFIG.probs.o1_t1 },
+                { typeKey: 'o1_t2', weight: CONFIG.probs.o1_t2 },
+                { typeKey: 'o2_t2', weight: CONFIG.probs.o2_t2 },
+                { typeKey: 'o2_t3', weight: CONFIG.probs.o2_t3 }
+            ];
+
+            const totalWeight = types.reduce((acc, curr) => acc + curr.weight, 0);
+            let selectedType = 'o1_t2';
+
+            if (totalWeight > 0) {
+                let randomRoll = Math.random() * totalWeight;
+                for (let t of types) {
+                    if (randomRoll < t.weight) {
+                        selectedType = t.typeKey;
+                        break;
+                    }
+                    randomRoll -= t.weight;
+                }
+            }
+
+            let a = 0, b = 0, c = 0;
+
+            switch (selectedType) {
+                case 'o0_t1': c = getRandomInt(-4, 4, true); break;
+                case 'o1_t1': b = getRandomInt(-3, 3, true); break;
+                case 'o1_t2': b = getRandomInt(-3, 3, true); c = getRandomInt(-4, 4, true); break;
+                case 'o2_t2':
+                    a = getRandomInt(-2, 2, true);
+                    if (Math.random() < 0.5) c = getRandomInt(-4, 4, true);
+                    else b = getRandomInt(-3, 3, true);
+                    break;
+                case 'o2_t3':
+                    a = getRandomInt(-2, 2, true);
+                    b = getRandomInt(-3, 3, true);
+                    c = getRandomInt(-4, 4, true);
+                    break;
+            }
+
+            const evalFn = (x) => a * x * x + b * x + c;
+
+            const toStringFn = () => {
+                let terms = [];
+                if (a !== 0) {
+                    if (a === 1) terms.push("x²");
+                    else if (a === -1) terms.push("-x²");
+                    else terms.push(`${a}x²`);
+                }
+                if (b !== 0) {
+                    if (terms.length === 0) {
+                        if (b === 1) terms.push("x");
+                        else if (b === -1) terms.push("-x");
+                        else terms.push(`${b}x`);
+                    } else {
+                        if (b > 0) terms.push(`+ ${b === 1 ? '' : b}x`);
+                        else terms.push(`- ${Math.abs(b) === 1 ? '' : Math.abs(b)}x`);
+                    }
+                }
+                if (c !== 0) {
+                    if (terms.length === 0) terms.push(`${c}`);
+                    else {
+                        if (c > 0) terms.push(`+ ${c}`);
+                        else terms.push(`- ${Math.abs(c)}`);
+                    }
+                }
+                if (terms.length === 0) return "y = 0";
+                return `y = ${terms.join(" ")}`;
+            };
+
+            const getExplanationFn = () => {
+                if (a !== 0) {
+                    const dir = a > 0 ? "opens upwards" : "opens downwards";
+                    return `Parabola that ${dir} with y-intercept at (0, ${c}).`;
+                } else if (b !== 0) {
+                    const slopeText = b > 0 ? `positive slope (${b})` : `negative slope (${b})`;
+                    return `Line with ${slopeText} and y-intercept at (0, ${c}).`;
+                } else {
+                    return `Horizontal line at y = ${c}.`;
+                }
+            };
+
+            return { a, b, c, type: selectedType, eval: evalFn, toString: toStringFn, getExplanation: getExplanationFn };
+        }
+
+        function areTooSimilar(f1, f2) {
+            let maxDiff = 0;
+            for (let x = DOMAIN.min; x <= DOMAIN.max; x += 0.5) {
+                const diff = Math.abs(f1.eval(x) - f2.eval(x));
+                if (diff > maxDiff) maxDiff = diff;
+            }
+            return maxDiff < 1.5;
+        }
+
+        function startRun() {
+            problemIndex = 0; score = 0; streak = 0; correctItemsCount = 0; totalItemsCount = 0; totalTimeSpent = 0;
+            document.getElementById('score-count').textContent = '0';
+            document.getElementById('streak-count').textContent = '0 🔥';
+            loadProblem(problemIndex);
+        }
+
+        function loadProblem(pIdx) {
+            isEvaluated = false; placedSlots = {}; userTypedInputs = {}; activeTypingItem = 0; selectedCardIdx = null;
+            document.getElementById('problem-progress').textContent = `${pIdx + 1} / ${CONFIG.numProblems}`;
+            document.getElementById('feedback-box').classList.add('hidden');
+
+            currentFunctions = [];
+            let attempts = 0;
+            while (currentFunctions.length < CONFIG.numGraphs && attempts < 150) {
+                attempts++;
+                const candidate = createFunctionByProbabilities();
+                const isTooClose = currentFunctions.some(f => f.toString() === candidate.toString() || areTooSimilar(f, candidate));
+                if (!isTooClose) currentFunctions.push(candidate);
+            }
+            while (currentFunctions.length < CONFIG.numGraphs) currentFunctions.push(createFunctionByProbabilities());
+
+            itemRepresentations = [];
+            for (let i = 0; i < CONFIG.numGraphs; i++) {
+                if (CONFIG.showRandom) itemRepresentations.push(Math.random() < 0.5 ? 'graph' : 'table');
+                else if (CONFIG.showTable) itemRepresentations.push('table');
+                else itemRepresentations.push('graph');
+            }
+
+            assignedColors = [0, 1, 2].slice(0, CONFIG.numGraphs);
+
+            if (CONFIG.numAnswers > 0) {
+                choiceFunctions = [...currentFunctions];
+                while (choiceFunctions.length < CONFIG.numAnswers) {
+                    const distractor = createFunctionByProbabilities();
+                    if (!choiceFunctions.some(f => f.toString() === distractor.toString())) choiceFunctions.push(distractor);
+                }
+                choiceFunctions.sort(() => Math.random() - 0.5);
+            }
+
+            renderVisualizer();
+            renderTargetSlots();
+
+            if (CONFIG.numAnswers > 0) {
+                document.getElementById('drag-mode-container').classList.remove('hidden');
+                document.getElementById('typing-mode-container').classList.add('hidden');
+                document.getElementById('input-section-title').textContent = 'Match Functions';
+                renderCards();
+            } else {
+                document.getElementById('drag-mode-container').classList.add('hidden');
+                document.getElementById('typing-mode-container').classList.remove('hidden');
+                document.getElementById('input-section-title').textContent = 'Type Equations';
+                setupTypingTabs();
+                updateTypingDisplay();
+            }
+
+            startTimer();
+        }
+
+        function renderVisualizer() {
+            const canvasEl = document.getElementById('graphCanvas');
+            const tableContainer = document.getElementById('tableContainer');
+            const hasGraphs = itemRepresentations.includes('graph');
+            const hasTables = itemRepresentations.includes('table');
+
+            if (hasGraphs && !hasTables) {
+                canvasEl.classList.remove('hidden');
+                tableContainer.classList.add('hidden');
+                drawScene();
+            } else if (hasTables && !hasGraphs) {
+                canvasEl.classList.add('hidden');
+                tableContainer.classList.remove('hidden');
+                renderTablesView();
+            } else {
+                canvasEl.classList.remove('hidden');
+                tableContainer.classList.remove('hidden');
+                drawScene();
+                renderTablesView();
+            }
+        }
+
+        function drawScene() {
+            if (!ctx) return;
+            const width = canvas.width / (window.devicePixelRatio || 1);
+            const height = canvas.height / (window.devicePixelRatio || 1);
+
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#090d16'; ctx.fillRect(0, 0, width, height);
+
+            ctx.lineWidth = 1; ctx.strokeStyle = '#1e293b';
+            for (let x = DOMAIN.min; x <= DOMAIN.max; x++) {
+                const cx = toCanvasX(x, width); ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, height); ctx.stroke();
+            }
+            for (let y = RANGE.min; y <= RANGE.max; y++) {
+                const cy = toCanvasY(y, height); ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(width, cy); ctx.stroke();
+            }
+
+            ctx.lineWidth = 2; ctx.strokeStyle = '#64748b';
+            const originX = toCanvasX(0, width); const originY = toCanvasY(0, height);
+            ctx.beginPath(); ctx.moveTo(0, originY); ctx.lineTo(width, originY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(originX, 0); ctx.lineTo(originX, height); ctx.stroke();
+
+            ctx.fillStyle = '#94a3b8'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            for (let x = DOMAIN.min; x <= DOMAIN.max; x++) {
+                if (x === 0) continue;
+                ctx.fillText(x.toString(), toCanvasX(x, width), originY + 4);
+            }
+            ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+            for (let y = RANGE.min; y <= RANGE.max; y++) {
+                if (y === 0) continue;
+                ctx.fillText(y.toString(), originX - 6, toCanvasY(y, height));
+            }
+
+            currentFunctions.forEach((fn, idx) => {
+                if (itemRepresentations[idx] !== 'graph') return;
+                ctx.lineWidth = 3; ctx.strokeStyle = ITEM_COLORS[assignedColors[idx]].hex; ctx.beginPath();
+                let started = false;
+                for (let x = DOMAIN.min; x <= DOMAIN.max; x += 0.05) {
+                    const cx = toCanvasX(x, width); const cy = toCanvasY(fn.eval(x), height);
+                    if (!started) { ctx.moveTo(cx, cy); started = true; }
+                    else { ctx.lineTo(cx, cy); }
+                }
+                ctx.stroke();
+            });
+        }
+
+        function renderTablesView() {
+            const tableContainer = document.getElementById('tableContainer');
+            tableContainer.innerHTML = '';
+            currentFunctions.forEach((fn, idx) => {
+                if (itemRepresentations[idx] !== 'table') return;
+                const colorObj = ITEM_COLORS[assignedColors[idx]];
+                const tableBox = document.createElement('div');
+                tableBox.className = `p-3 bg-slate-900 border border-slate-700 rounded-xl space-y-2 shadow-md`;
+
+                const rowsHTML = [-2, -1, 0, 1, 2].map(x => `
+                    <tr class="border-b border-slate-800 text-center font-mono">
+                        <td class="py-1 text-slate-400">${x}</td>
+                        <td class="py-1 text-indigo-300 font-bold">${fn.eval(x)}</td>
+                    </tr>
+                `).join('');
+
+                tableBox.innerHTML = `
+                    <div class="flex items-center gap-2 pb-1 border-b border-slate-800">
+                        <span class="w-3 h-3 rounded-full ${colorObj.bg}"></span>
+                        <span class="text-xs font-bold text-slate-200">${colorObj.name} Table</span>
+                    </div>
+                    <table class="w-full text-xs">
+                        <thead><tr class="border-b border-slate-700 bg-slate-950/60 text-slate-400 font-semibold"><th class="py-1">x</th><th class="py-1">y</th></tr></thead>
+                        <tbody>${rowsHTML}</tbody>
+                    </table>
+                `;
+                tableContainer.appendChild(tableBox);
+            });
+        }
+
+        function renderTargetSlots() {
+            const container = document.getElementById('targets-grid');
+            container.innerHTML = '';
+            for (let i = 0; i < CONFIG.numGraphs; i++) {
+                const colorObj = ITEM_COLORS[assignedColors[i]];
+                const repBadge = itemRepresentations[i] === 'table' ? '<i class="fa-solid fa-table text-[10px]"></i> Table' : '<i class="fa-solid fa-chart-line text-[10px]"></i> Graph';
+                const zone = document.createElement('div');
+                zone.id = `drop-zone-${i}`;
+                zone.className = `drop-zone bg-slate-900/90 border-2 border-dashed ${colorObj.border} rounded-xl p-2.5 flex flex-col items-center justify-center min-h-[85px] cursor-pointer transition-all`;
+                zone.setAttribute('ondragover', 'handleDragOver(event)');
+                zone.setAttribute('ondrop', `handleDrop(event, ${i})`);
+                zone.setAttribute('onclick', `handleZoneClick(${i})`);
+
+                zone.innerHTML = `
+                    <div class="flex items-center justify-between w-full mb-1 px-1">
+                        <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full ${colorObj.bg}"></span><span class="text-xs font-bold text-slate-200">${colorObj.name}</span></div>
+                        <span class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">${repBadge}</span>
+                    </div>
+                    <div class="slot-content w-full flex justify-center text-xs text-slate-500 italic">
+                        ${CONFIG.numAnswers > 0 ? 'Drop function here' : 'Tap tab to type equation'}
+                    </div>
+                `;
+                container.appendChild(zone);
+            }
+        }
+
+        let selectedCardIdx = null;
+
+        function renderCards() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+            let hasUnplaced = false;
+
+            choiceFunctions.forEach((fn, cardIdx) => {
+                if (Object.values(placedSlots).includes(cardIdx)) return;
+                hasUnplaced = true;
+                const card = document.createElement('div');
+                const isSelected = selectedCardIdx === cardIdx;
+                card.className = `p-2.5 bg-slate-800 border ${isSelected ? 'border-indigo-400 ring-2 ring-indigo-500/50' : 'border-slate-600'} hover:border-indigo-400 rounded-xl cursor-grab text-center font-mono font-bold text-slate-100 shadow-md flex items-center justify-between`;
+                card.draggable = true;
+                card.innerHTML = `
+                    <span class="text-xs text-slate-500"><i class="fa-solid fa-grip-vertical"></i></span>
+                    <span class="text-sm">${fn.toString()}</span>
+                    <span class="text-[11px] text-indigo-400 font-sans font-normal">${isSelected ? 'Selected' : 'Drag'}</span>
+                `;
+                card.ondragstart = (e) => { e.dataTransfer.setData('text/plain', cardIdx.toString()); selectedCardIdx = null; };
+                card.onclick = () => { selectedCardIdx = (selectedCardIdx === cardIdx) ? null : cardIdx; renderCards(); };
+                container.appendChild(card);
+            });
+
+            if (!hasUnplaced) container.innerHTML = `<div class="text-center text-xs text-slate-500 italic py-4">All choices assigned!</div>`;
+            updateSlotsUI();
+        }
+
+        function updateSlotsUI() {
+            for (let i = 0; i < CONFIG.numGraphs; i++) {
+                const zone = document.getElementById(`drop-zone-${i}`);
+                if (!zone) continue;
+                const slotContent = zone.querySelector('.slot-content');
+
+                if (CONFIG.numAnswers > 0) {
+                    const cardIdx = placedSlots[i];
+                    if (cardIdx !== undefined && cardIdx !== null) {
+                        const fn = choiceFunctions[cardIdx];
+                        slotContent.innerHTML = `
+                            <div class="w-full py-1 px-2 bg-slate-800 border border-slate-600 rounded-lg text-slate-100 font-mono font-bold text-xs flex items-center justify-between shadow-sm">
+                                <span>${fn.toString()}</span>
+                                <button onclick="event.stopPropagation(); removePlacedFn(${i})" class="text-slate-400 hover:text-rose-400 text-xs p-1"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        `;
+                    } else slotContent.innerHTML = `<span class="text-xs text-slate-500 italic">Drop function here</span>`;
+                } else {
+                    const typed = userTypedInputs[i] || "";
+                    slotContent.innerHTML = typed.trim() !== "" ? `<span class="font-mono font-bold text-xs text-indigo-300 bg-slate-800 px-2 py-1 rounded border border-slate-700">y = ${typed}</span>` : `<span class="text-xs text-slate-500 italic">Tap tab to type</span>`;
+                }
+            }
+        }
+
+        function handleDragOver(e) { e.preventDefault(); }
+        function handleDrop(e, targetSlotIdx) {
+            e.preventDefault();
+            const cardIdxStr = e.dataTransfer.getData('text/plain');
+            if (cardIdxStr === "") return;
+            assignCardToSlot(parseInt(cardIdxStr, 10), targetSlotIdx);
+        }
+        function handleDropToPool(e) {
+            e.preventDefault();
+            const cardIdxStr = e.dataTransfer.getData('text/plain');
+            if (cardIdxStr === "") return;
+            const cardIdx = parseInt(cardIdxStr, 10);
+            for (let slot in placedSlots) { if (placedSlots[slot] === cardIdx) delete placedSlots[slot]; }
+            renderCards();
+        }
+        function handleZoneClick(slotIdx) {
+            if (CONFIG.numAnswers > 0) {
+                if (selectedCardIdx !== null) { assignCardToSlot(selectedCardIdx, slotIdx); selectedCardIdx = null; }
+            } else setActiveTypingTab(slotIdx);
+        }
+        function assignCardToSlot(cardIdx, targetSlotIdx) {
+            for (let slot in placedSlots) { if (placedSlots[slot] === cardIdx) delete placedSlots[slot]; }
+            placedSlots[targetSlotIdx] = cardIdx;
+            renderCards();
+        }
+        function removePlacedFn(slotIdx) { delete placedSlots[slotIdx]; renderCards(); }
+
+        function setupTypingTabs() {
+            const tabsContainer = document.getElementById('typing-tabs');
+            tabsContainer.innerHTML = '';
+            for (let i = 0; i < CONFIG.numGraphs; i++) {
+                const colorObj = ITEM_COLORS[assignedColors[i]];
+                const btn = document.createElement('button');
+                btn.className = `flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 border ${i === activeTypingItem ? 'bg-indigo-600 text-white border-indigo-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`;
+                btn.innerHTML = `<span class="w-2.5 h-2.5 rounded-full ${colorObj.bg}"></span> ${colorObj.name}`;
+                btn.onclick = () => setActiveTypingTab(i);
+                tabsContainer.appendChild(btn);
+            }
+        }
+
+        function setActiveTypingTab(idx) {
+            activeTypingItem = idx;
+            setupTypingTabs();
+            updateTypingDisplay();
+            const colorObj = ITEM_COLORS[assignedColors[idx]];
+            const badge = document.getElementById('active-item-badge');
+            badge.textContent = colorObj.name;
+            badge.className = `text-xs px-2 py-0.5 rounded font-bold border ${colorObj.bg} text-slate-950 font-bold border-transparent`;
+        }
+
+        function keypadInsert(char) {
+            if (isEvaluated) return;
+            userTypedInputs[activeTypingItem] = (userTypedInputs[activeTypingItem] || "") + char;
+            updateTypingDisplay(); updateSlotsUI();
+        }
+        function keypadBackspace() {
+            if (isEvaluated) return;
+            userTypedInputs[activeTypingItem] = (userTypedInputs[activeTypingItem] || "").slice(0, -1);
+            updateTypingDisplay(); updateSlotsUI();
+        }
+        function keypadClear() {
+            if (isEvaluated) return;
+            userTypedInputs[activeTypingItem] = "";
+            updateTypingDisplay(); updateSlotsUI();
+        }
+        function updateTypingDisplay() {
+            document.getElementById('math-display-text').textContent = `y = ${userTypedInputs[activeTypingItem] || ""}`;
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            const timerContainer = document.getElementById('timer-container');
+            if (CONFIG.timer <= 0) { timerContainer.classList.add('hidden'); return; }
+            timerContainer.classList.remove('hidden');
+            timeRemaining = CONFIG.timer;
+            updateTimerUI();
+            timerInterval = setInterval(() => {
+                timeRemaining -= 0.1; totalTimeSpent += 0.1;
+                if (timeRemaining <= 0) { timeRemaining = 0; clearInterval(timerInterval); updateTimerUI(); checkAnswers(true); }
+                else updateTimerUI();
+            }, 100);
+        }
+
+        function updateTimerUI() {
+            document.getElementById('timer-bar').style.width = `${(timeRemaining / CONFIG.timer) * 100}%`;
+            document.getElementById('timer-text').textContent = `${timeRemaining.toFixed(1)}s`;
+            document.getElementById('multiplier-badge').textContent = `${(1.0 + (timeRemaining / CONFIG.timer)).toFixed(1)}x`;
+        }
+
+        function normalizeFormula(str) {
+            if (!str) return "";
+            return str.replace(/\s+/g, '').replace(/·/g, '').replace(/\*/g, '').replace(/\^2/g, '²').toLowerCase();
+        }
+
+        function checkAnswers(isTimeout = false) {
+            if (isEvaluated) return;
+            clearInterval(timerInterval);
+
+            let isCorrectAll = true;
+            let problemCorrectItems = 0;
+            const multiplier = CONFIG.timer > 0 ? (1.0 + (timeRemaining / CONFIG.timer)) : 1.0;
+
+            if (CONFIG.numAnswers > 0) {
+                for (let i = 0; i < CONFIG.numGraphs; i++) {
+                    const zone = document.getElementById(`drop-zone-${i}`);
+                    const cardIdx = placedSlots[i];
+                    if (cardIdx !== undefined && cardIdx !== null) {
+                        if (choiceFunctions[cardIdx].toString() === currentFunctions[i].toString()) {
+                            zone.style.borderColor = '#34d399'; problemCorrectItems++;
+                        } else { zone.style.borderColor = '#f43f5e'; isCorrectAll = false; }
+                    } else { zone.style.borderColor = '#f43f5e'; isCorrectAll = false; }
+                }
+            } else {
+                for (let i = 0; i < CONFIG.numGraphs; i++) {
+                    const zone = document.getElementById(`drop-zone-${i}`);
+                    const cleanTyped = normalizeFormula(userTypedInputs[i] || "");
+                    const cleanTarget = normalizeFormula(currentFunctions[i].toString().replace("y = ", ""));
+                    if (cleanTyped === cleanTarget && cleanTyped !== "") {
+                        zone.style.borderColor = '#34d399'; problemCorrectItems++;
+                    } else { zone.style.borderColor = '#f43f5e'; isCorrectAll = false; }
+                }
+            }
+
+            isEvaluated = true;
+            correctItemsCount += problemCorrectItems;
+            totalItemsCount += CONFIG.numGraphs;
+
+            if (isCorrectAll) {
+                const currentProblemScore = Math.round(100 * CONFIG.numGraphs * multiplier);
+                score += currentProblemScore; streak++;
+                showFeedback(true, `<p class="font-bold text-emerald-300">All ${CONFIG.numGraphs} correct! (+${currentProblemScore} pts)</p>`, "fa-circle-check", "emerald");
+            } else {
+                streak = 0;
+                let explanationHTML = `<p class="font-bold text-rose-300">${isTimeout ? 'Time Expired!' : 'Incorrect matches.'} Correct Solutions:</p><ul class="list-disc list-inside text-xs mt-1 space-y-1 text-slate-300">`;
+                currentFunctions.forEach((fn, idx) => {
+                    explanationHTML += `<li><strong class="font-mono text-slate-100">${ITEM_COLORS[assignedColors[idx]].name} (${fn.toString()})</strong>: <i>${fn.getExplanation()}</i></li>`;
+                });
+                explanationHTML += `</ul>`;
+                showFeedback(false, explanationHTML, "fa-circle-xmark", "rose");
+            }
+
+            document.getElementById('score-count').textContent = score;
+            document.getElementById('streak-count').textContent = `${streak} 🔥`;
+        }
+
+        function nextProblem() {
+            if (!isEvaluated) { checkAnswers(); return; }
+            problemIndex++;
+            if (problemIndex < CONFIG.numProblems) loadProblem(problemIndex);
+            else showRunSummary();
+        }
+
+        function showRunSummary() {
+            const summaryModal = document.getElementById('summary-modal');
+            const accuracy = totalItemsCount > 0 ? Math.round((correctItemsCount / totalItemsCount) * 100) : 0;
+            const avgTime = CONFIG.numProblems > 0 ? (totalTimeSpent / CONFIG.numProblems).toFixed(1) : 0;
+
+            document.getElementById('summary-score').textContent = score;
+            document.getElementById('summary-accuracy').textContent = `${accuracy}%`;
+            document.getElementById('summary-correct').textContent = `${correctItemsCount} / ${totalItemsCount}`;
+            document.getElementById('summary-avg-time').textContent = `${avgTime}s`;
+            summaryModal.classList.remove('hidden');
+        }
+
+        function hideSummaryModal() { document.getElementById('summary-modal').classList.add('hidden'); }
+        function restartRun() { hideSummaryModal(); startRun(); }
+
+        function showFeedback(isSuccess, messageHTML, iconClass, theme) {
+            const feedbackBox = document.getElementById('feedback-box');
+            const feedbackText = document.getElementById('feedback-text');
+            const feedbackIcon = document.getElementById('feedback-icon');
+
+            feedbackBox.className = "p-3.5 rounded-xl text-xs sm:text-sm font-medium border flex items-start gap-2.5 transition-all";
+            if (theme === 'emerald') {
+                feedbackBox.classList.add('bg-emerald-950/80', 'border-emerald-700', 'text-emerald-200');
+                feedbackIcon.className = `fa-solid ${iconClass} text-emerald-400 text-base mt-0.5`;
+            } else {
+                feedbackBox.classList.add('bg-rose-950/80', 'border-rose-700', 'text-rose-200');
+                feedbackIcon.className = `fa-solid ${iconClass} text-rose-400 text-base mt-0.5`;
+            }
+            feedbackText.innerHTML = messageHTML;
+            feedbackBox.classList.remove('hidden');
+        }
+
+        function openSettingsModal() { syncConfigToUI(); document.getElementById('config-modal').classList.remove('hidden'); }
+        function closeSettingsModal() { document.getElementById('config-modal').classList.add('hidden'); }
+
+        function applyProbPreset(presetName) {
+            const presets = {
+                default: { o0_t1: 1, o1_t1: 2, o1_t2: 3, o2_t2: 3, o2_t3: 2 },
+                linear:  { o0_t1: 1, o1_t1: 3, o1_t2: 5, o2_t2: 0, o2_t3: 0 },
+                quad:    { o0_t1: 0, o1_t1: 0, o1_t2: 0, o2_t2: 5, o2_t3: 5 }
+            };
+            const p = presets[presetName] || presets.default;
+            for (let k in p) {
+                document.getElementById(`p_${k}`).value = p[k];
+                document.getElementById(`p_${k}_val`).textContent = p[k];
+            }
+        }
+
+        function applySettingsFromForm(e) {
+            e.preventDefault();
+            const graphsVal = parseInt(document.querySelector('input[name="cfg-graphs"]:checked').value, 10);
+            const answersVal = document.getElementById('cfg-answers').value;
+
+            CONFIG.numGraphs = graphsVal;
+            CONFIG.numAnswers = answersVal === 'auto' ? graphsVal : parseInt(answersVal, 10);
+            CONFIG.numProblems = parseInt(document.getElementById('cfg-problems').value, 10);
+            CONFIG.timer = parseInt(document.getElementById('cfg-timer').value, 10);
+            CONFIG.showTable = document.getElementById('cfg-show-table').checked;
+            CONFIG.showRandom = document.getElementById('cfg-show-random').checked;
+
+            CONFIG.probs.o0_t1 = parseFloat(document.getElementById('p_o0_t1').value);
+            CONFIG.probs.o1_t1 = parseFloat(document.getElementById('p_o1_t1').value);
+            CONFIG.probs.o1_t2 = parseFloat(document.getElementById('p_o1_t2').value);
+            CONFIG.probs.o2_t2 = parseFloat(document.getElementById('p_o2_t2').value);
+            CONFIG.probs.o2_t3 = parseFloat(document.getElementById('p_o2_t3').value);
+
+            updateURLQueryParams();
+            closeSettingsModal();
+            startRun();
+        }
+
+        function updateURLQueryParams() {
+            const url = new URL(window.location.href);
+            url.searchParams.set('number-of-graphs', CONFIG.numGraphs);
+            url.searchParams.set('number-of-answers', CONFIG.numAnswers);
+            url.searchParams.set('number-of-problems', CONFIG.numProblems);
+            url.searchParams.set('timer', CONFIG.timer);
+            url.searchParams.set('show-table', CONFIG.showTable);
+            url.searchParams.set('show-random', CONFIG.showRandom);
+
+            url.searchParams.set('p_o0_t1', CONFIG.probs.o0_t1);
+            url.searchParams.set('p_o1_t1', CONFIG.probs.o1_t1);
+            url.searchParams.set('p_o1_t2', CONFIG.probs.o1_t2);
+            url.searchParams.set('p_o2_t2', CONFIG.probs.o2_t2);
+            url.searchParams.set('p_o2_t3', CONFIG.probs.o2_t3);
+
+            window.history.replaceState({}, '', url.toString());
+        }
+
+        function copyConfigURL() {
+            updateURLQueryParams();
+            const tempInput = document.createElement('input');
+            tempInput.value = window.location.href;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            alert("URL with custom settings copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
