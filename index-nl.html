@@ -975,7 +975,7 @@
             totalItemsCount += CONFIG.numGraphs;
 
             if (isCorrectAll) {
-                const currentProblemScore = Math.round(100 * CONFIG.numGraphs * multiplier);
+                const currentProblemScore = Math.round(100 * CONFIG.numGraphs * multiplier * (1 + streak/10);
                 score += currentProblemScore; streak++;
                 showFeedback(true, `<p class="font-bold text-emerald-300">Alle ${CONFIG.numGraphs} goed! (+${currentProblemScore} ptn)</p>`, "fa-circle-check", "emerald");
             } else {
