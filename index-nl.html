@@ -22,7 +22,7 @@
     <!-- Header & Navigation -->
     <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700/80 sticky top-0 z-30 py-3.5 px-4 sm:px-6 shadow-lg">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
-            
+
             <div class="flex items-center justify-between w-full md:w-auto gap-4">
                 <div class="flex items-center gap-3">
                     <div class="p-2.5 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl text-white shadow-md shadow-indigo-500/20">
@@ -75,12 +75,12 @@
 
     <!-- Main Workspace -->
     <main class="max-w-7xl mx-auto w-full p-4 sm:p-6 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
+
         <!-- Left Column: Visual Display -->
         <section class="lg:col-span-7 bg-slate-800/80 border border-slate-700 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col items-center">
             <div class="w-full flex justify-between items-center mb-3">
                 <h2 id="visualizer-heading" class="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                    <i class="fa-solid fa-compass text-indigo-400"></i> Visuele Weergave
+                    <i class="fa-solid fa-compass text-indigo-400"></i>
                 </h2>
                 <div class="flex items-center gap-2 text-[11px] text-slate-400 bg-slate-900/60 px-2.5 py-1 rounded-md border border-slate-700">
                     <span>X: [-5, 5]</span>
@@ -131,7 +131,7 @@
                             <span class="text-xs font-semibold text-slate-400">Formule-invoer</span>
                             <span id="active-item-badge" class="text-xs px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">Item A</span>
                         </div>
-                        
+
                         <div id="math-preview-box" class="min-h-[48px] bg-slate-900 border border-slate-800 rounded-lg p-2.5 font-mono text-base sm:text-lg text-slate-100 flex items-center justify-between overflow-x-auto tracking-wide">
                             <span id="math-display-text" class="text-indigo-300 font-bold">y = </span>
                             <span id="cursor" class="inline-block w-2 h-5 bg-indigo-400 animate-pulse ml-0.5"></span>
@@ -143,7 +143,7 @@
                             <button onclick="keypadInsert('+')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-mono font-bold text-sm text-slate-200 border border-slate-700">+</button>
                             <button onclick="keypadInsert('-')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-mono font-bold text-sm text-slate-200 border border-slate-700">-</button>
                             <button onclick="keypadInsert('·')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg font-mono font-bold text-sm text-slate-200 border border-slate-700">·</button>
-                            
+
                             <button onclick="keypadInsert('1')" class="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-lg font-mono text-sm text-slate-300">1</button>
                             <button onclick="keypadInsert('2')" class="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-lg font-mono text-sm text-slate-300">2</button>
                             <button onclick="keypadInsert('3')" class="p-2 bg-slate-800/80 hover:bg-slate-700 rounded-lg font-mono text-sm text-slate-300">3</button>
@@ -193,7 +193,7 @@
             </div>
 
             <form id="config-form" onsubmit="applySettingsFromForm(event)" class="space-y-4 text-xs sm:text-sm">
-                
+
                 <!-- Polynomial Type Weights -->
                 <div class="space-y-2 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                     <div class="flex justify-between items-center">
@@ -204,7 +204,7 @@
                             <button type="button" onclick="applyProbPreset('quad')" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-indigo-300 hover:bg-slate-700">Enkel Kwadratisch</button>
                         </div>
                     </div>
-                    
+
                     <div class="space-y-2 text-xs">
                         <div class="flex items-center gap-2">
                             <span class="w-36 text-slate-400 font-mono">Graad 0 (y = c):</span>
@@ -360,9 +360,9 @@
     <!-- Main Logic Script -->
     <script>
         const ITEM_COLORS = [
-            { id: 'red', name: 'Item A', label: 'Grafiek A', hex: '#f43f5e', border: 'border-rose-500/50', bg: 'bg-rose-500' },
-            { id: 'blue', name: 'Item B', label: 'Grafiek B', hex: '#38bdf8', border: 'border-sky-400/50', bg: 'bg-sky-400' },
-            { id: 'green', name: 'Item C', label: 'Grafiek C', hex: '#34d399', border: 'border-emerald-400/50', bg: 'bg-emerald-400' }
+            { id: 'red', name: 'A', label: 'Grafiek A', hex: '#f43f5e', border: 'border-rose-500/50', bg: 'bg-rose-500' },
+            { id: 'blue', name: 'B', label: 'Grafiek B', hex: '#38bdf8', border: 'border-sky-400/50', bg: 'bg-sky-400' },
+            { id: 'green', name: 'C', label: 'Grafiek C', hex: '#34d399', border: 'border-emerald-400/50', bg: 'bg-emerald-400' }
         ];
 
         const DOMAIN = { min: -5, max: 5 };
@@ -659,12 +659,12 @@
             if (CONFIG.numAnswers > 0) {
                 document.getElementById('drag-mode-container').classList.remove('hidden');
                 document.getElementById('typing-mode-container').classList.add('hidden');
-                document.getElementById('input-section-title').textContent = 'Match Functions';
+                document.getElementById('input-section-title').textContent = 'Koppel formule(s) aan de grafiek';
                 renderCards();
             } else {
                 document.getElementById('drag-mode-container').classList.add('hidden');
                 document.getElementById('typing-mode-container').classList.remove('hidden');
-                document.getElementById('input-section-title').textContent = 'Type Equations';
+                document.getElementById('input-section-title').textContent = 'Typ fomule';
                 setupTypingTabs();
                 updateTypingDisplay();
             }
