@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Graph & Plot Studio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- KaTeX CDN for LaTeX rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-mono-code {
+            font-family: 'Fira Code', monospace;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(107, 114, 128, 0.8);
+        }
+        .katex-display {
+            margin: 0 !important;
+        }
+        /* Increased base math formula sizes for presentation/beamer */
+        .katex {
+            font-size: 1.25em !important;
+        }
+        .point-latex-label {
+            position: absolute;
+            pointer-events: none;
+            transform: translate(12px, -24px);
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 1px 6px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            backdrop-filter: blur(4px);
+        }
+        .dark .point-latex-label {
+            background: rgba(15, 23, 42, 0.85);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex flex-col transition-colors duration-200 overflow-x-hidden">
+
+    <!-- Header Navigation -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-5 py-4 flex-none">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-chart-line text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">PlotStudio Presentation</h1>
+                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">1:1 Aspect Ratio • High-Contrast Beamer Mode</p>
+                </div>
+            </div>
+
+            <!-- Top Actions -->
+            <div class="flex items-center gap-3">
+                <button id="themeToggle" class="p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Toggle Light/Dark Theme">
+                    <i class="fa-solid fa-moon dark:hidden text-xl"></i>
+                    <i class="fa-solid fa-sun hidden dark:inline text-xl text-amber-400"></i>
+                </button>
+                <div class="h-7 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                <button id="btnExportCsv" class="px-3.5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-file-csv text-emerald-600 dark:text-emerald-400 text-sm"></i> CSV
+                </button>
+                <button id="btnExportJson" class="px-3.5 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-code text-amber-600 dark:text-amber-400 text-sm"></i> JSON
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 flex flex-col lg:flex-row gap-4 overflow-hidden">
+        
+        <!-- Canvas & Graph Viewport Column (Left / Main) -->
+        <section class="flex-1 flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden relative">
+            
+            <!-- Toolbar Overlay Above Canvas -->
+            <div class="p-3 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur border-b border-slate-200 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3 text-sm font-medium">
+                
+                <!-- Coordinate Bounds & Snap Toggle Controls -->
+                <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-slate-600 dark:text-slate-300">X-Range:</span>
+                        <input type="number" id="xMin" value="-10" step="any" class="w-16 px-2 py-1 text-center bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-lg font-mono-code font-bold focus:outline-none focus:border-brand-500">
+                        <span class="text-slate-400 font-bold">to</span>
+                        <input type="number" id="xMax" value="10" step="any" class="w-16 px-2 py-1 text-center bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-600 rounded-lg font-mono-code font-bold focus:outline-none focus:border-brand-500">
+                    </div>
+                    <button id="btnApplyBounds" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg font-bold transition">Update Bounds</button>
+                    
+                    <div class="h-5 w-px bg-slate-300 dark:bg-slate-600 mx-1"></div>
+
+                    <!-- Snap to Grid Toggle -->
+                    <label class="flex items-center gap-2 cursor-pointer select-none bg-white dark:bg-slate-900 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <input type="checkbox" id="chkSnapToGrid" checked class="w-4 h-4 accent-brand-600 rounded cursor-pointer">
+                        <span class="font-bold text-slate-700 dark:text-slate-200 text-xs flex items-center gap-1">
+                            <i class="fa-solid fa-magnet text-brand-500"></i> Snap to Grid
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Canvas Action Buttons -->
+                <div class="flex items-center gap-2">
+                    <button id="btnResetView" class="px-3 py-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg font-bold transition flex items-center gap-1.5" title="Center graph view">
+                        <i class="fa-solid fa-compress"></i> Reset Zoom
+                    </button>
+                    <button id="btnClearPoints" class="px-3 py-1 bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900/80 rounded-lg font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash-can"></i> Clear Points
+                    </button>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="flex-1 relative w-full h-full min-h-[400px] bg-white dark:bg-slate-950 overflow-hidden cursor-grab active:cursor-grabbing" id="canvasViewport">
+                <canvas id="graphCanvas" class="w-full h-full block"></canvas>
+
+                <!-- Overlay Layer for crisp LaTeX Point Labels -->
+                <div id="katexOverlay" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+                
+                <!-- Dynamic Hover Coordinates Display Badge (Large Presentation Size) -->
+                <div id="hoverCoords" class="absolute bottom-4 left-4 bg-slate-900/95 dark:bg-slate-800/95 text-white text-base font-bold px-4 py-2 rounded-xl backdrop-blur pointer-events-none shadow-xl border border-slate-700 flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="coordText"></span>
+                </div>
+
+                <!-- Canvas Helper Prompt overlay on start -->
+                <div id="canvasTip" class="absolute top-4 left-4 bg-brand-50 dark:bg-slate-800/90 text-brand-800 dark:text-brand-300 text-xs font-bold px-3.5 py-2 rounded-xl border border-brand-200 dark:border-slate-700 shadow-md pointer-events-none flex items-center gap-2">
+                    <i class="fa-solid fa-hand-pointer text-sm"></i> Drag canvas to pan • Click to add points ($A, B, C\dots$)
+                </div>
+            </div>
+        </section>
+
+        <!-- Sidebar Control Panel (Right Column) -->
+        <aside class="w-full lg:w-96 flex flex-col gap-4 flex-none overflow-y-auto pr-1">
+            
+            <!-- Tab Navigation Header for Right Panel -->
+            <div class="flex bg-slate-200 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+                <button id="tabBtnFunctions" class="flex-1 py-2 rounded-lg text-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
+                    <i class="fa-solid fa-square-root-variable mr-1"></i> Equations
+                </button>
+                <button id="tabBtnPoints" class="flex-1 py-2 rounded-lg text-center bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-400 shadow-sm transition">
+                    <i class="fa-solid fa-location-dot mr-1"></i> Points (<span id="pointCountBadge">0</span>)
+                </button>
+            </div>
+
+            <!-- TAB 1: Functions / Equations Plotter Panel -->
+            <div id="tabFunctions" class="hidden flex flex-col gap-4">
+                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center justify-between">
+                        <span><i class="fa-solid fa-plus text-brand-500 mr-1.5"></i> Plot Equation</span>
+                    </h2>
+                    
+                    <form id="formAddFunction" class="space-y-3">
+                        <div class="relative flex-1">
+                            <input type="text" id="inputFormula" placeholder="e.g. y = x^2 or x^2 + y^2 = 25" required
+                                   class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl font-mono-code focus:outline-none focus:ring-2 focus:ring-brand-500 dark:text-white">
+                        </div>
+
+                        <!-- Quick Preset Equations -->
+                        <div class="flex items-center gap-1.5 flex-wrap text-[11px]">
+                            <span class="text-slate-400 font-medium">Presets:</span>
+                            <button type="button" class="preset-btn px-2 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded font-mono-code text-slate-600 dark:text-slate-300" data-eq="x^2 + y^2 = 25">Circle</button>
+                            <button type="button" class="preset-btn px-2 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded font-mono-code text-slate-600 dark:text-slate-300" data-eq="y + x = 5">Line</button>
+                            <button type="button" class="preset-btn px-2 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded font-mono-code text-slate-600 dark:text-slate-300" data-eq="y = x^2 - 4">Parabola</button>
+                        </div>
+
+                        <!-- Color & Width Options -->
+                        <div class="flex items-center justify-between gap-3 text-xs">
+                            <div class="flex items-center gap-2">
+                                <label class="text-slate-500 dark:text-slate-400">Color:</label>
+                                <input type="color" id="inputFuncColor" value="#3b82f6" class="w-7 h-7 rounded-lg border-0 cursor-pointer bg-transparent">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label class="text-slate-500 dark:text-slate-400">Width:</label>
+                                <select id="inputFuncWidth" class="px-2 py-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg">
+                                    <option value="1.5">Thin (1.5px)</option>
+                                    <option value="2.5" selected>Normal (2.5px)</option>
+                                    <option value="4">Thick (4px)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs rounded-xl shadow-md shadow-brand-500/20 transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-chart-line"></i> Add Equation Layer
+                        </button>
+                    </form>
+
+                    <!-- Math Syntax Hints Box -->
+                    <div class="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/60 dark:border-slate-700/60 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
+                        <p class="font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                            <i class="fa-solid fa-lightbulb text-amber-500"></i> Supported Formats:
+                        </p>
+                        <ul class="list-disc list-inside space-y-0.5 font-mono-code text-[10.5px]">
+                            <li>Explicit: <code class="text-slate-700 dark:text-slate-200">y = x^2 - 4</code></li>
+                            <li>Linear: <code class="text-slate-700 dark:text-slate-200">y + x = 10</code> or <code class="text-slate-700 dark:text-slate-200">2*x - 3*y = 6</code></li>
+                            <li>Implicit / Circles: <code class="text-slate-700 dark:text-slate-200">x^2 + y^2 = 25</code></li>
+                            <li>Powers & Roots: <code class="text-slate-700 dark:text-slate-200">y^2 - x^3 = 0</code>, <code class="text-slate-700 dark:text-slate-200">sqrt(x)</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Active Functions List -->
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex-1">
+                    <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Plotted Equations (LaTeX)</h3>
+                    <div id="functionsList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        <div class="text-center py-6 text-xs text-slate-400">No equations added yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: Points Table & Inputs Panel -->
+            <div id="tabPoints" class="flex flex-col gap-4">
+                
+                <!-- Manual Point Input Card -->
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+                    <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center justify-between">
+                        <span><i class="fa-solid fa-plus-circle text-emerald-500 mr-1.5"></i> Add Point Manually</span>
+                    </h2>
+
+                    <form id="formAddPoint" class="flex items-center gap-2">
+                        <div class="w-20 flex items-center gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-2 py-1.5">
+                            <span class="text-xs font-bold text-slate-400 font-mono-code">Label:</span>
+                            <input type="text" id="inputPointLabel" placeholder="Auto" class="w-full text-xs font-bold bg-transparent focus:outline-none dark:text-white uppercase">
+                        </div>
+                        <div class="flex-1 flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-2 py-1.5">
+                            <span class="text-xs font-bold text-slate-400 font-mono-code">X:</span>
+                            <input type="number" id="inputPointX" step="any" placeholder="0" required class="w-full text-xs font-mono-code bg-transparent focus:outline-none dark:text-white">
+                        </div>
+                        <div class="flex-1 flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl px-2 py-1.5">
+                            <span class="text-xs font-bold text-slate-400 font-mono-code">Y:</span>
+                            <input type="number" id="inputPointY" step="any" placeholder="0" required class="w-full text-xs font-mono-code bg-transparent focus:outline-none dark:text-white">
+                        </div>
+                        <button type="submit" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl shadow-sm transition">
+                            Add
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Points Table View -->
+                <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex-1 flex flex-col min-h-[250px]">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Points Coordinates (LaTeX)</h3>
+                    </div>
+
+                    <div class="flex-1 overflow-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 sticky top-0">
+                                <tr>
+                                    <th class="py-2.5 px-2 font-semibold w-24 text-center">LaTeX Name</th>
+                                    <th class="py-2.5 px-3 font-semibold">X Coord</th>
+                                    <th class="py-2.5 px-3 font-semibold">Y Coord</th>
+                                    <th class="py-2.5 px-2 font-semibold w-10 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pointsTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50 font-mono-code text-slate-700 dark:text-slate-300">
+                                <!-- Dynamic rows inserted here -->
+                            </tbody>
+                        </table>
+                        <div id="emptyPointsNotice" class="text-center py-8 text-xs text-slate-400">
+                            No points placed on graph yet.<br>Click on the graph canvas to add points.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- Custom Notification Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-medium opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2 border border-slate-700 z-50">
+        <i id="toastIcon" class="fa-solid fa-circle-info text-brand-400"></i>
+        <span id="toastMsg">Notification message</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- App State Management ---
+        const state = {
+            points: [],       // Array of { id, name, labelLatex, x, y, color }
+            functions: [],    // Array of { id, rawFormula, latexFormula, evalDiffFn, color, width, visible }
+            bounds: {
+                xMin: -10,
+                xMax: 10,
+                yMin: -10,
+                yMax: 10
+            },
+            snapToGrid: true,
+            snappedHoverPt: null,
+            nextPointIndex: 0, // Index for generating A, B, C...
+            nextFuncId: 1,
+            hoverPoint: null,
+            isDragging: false,
+            hasDragged: false,
+            dragStart: { x: 0, y: 0 },
+            boundsOnDragStart: null
+        };
+
+        // --- DOM Elements Reference ---
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        const katexOverlay = document.getElementById('katexOverlay');
+        const hoverCoords = document.getElementById('hoverCoords');
+        const coordText = document.getElementById('coordText');
+        const canvasTip = document.getElementById('canvasTip');
+
+        const xMinInput = document.getElementById('xMin');
+        const xMaxInput = document.getElementById('xMax');
+        const chkSnapToGrid = document.getElementById('chkSnapToGrid');
+        const btnApplyBounds = document.getElementById('btnApplyBounds');
+        const btnResetView = document.getElementById('btnResetView');
+        const btnClearPoints = document.getElementById('btnClearPoints');
+
+        const tabBtnFunctions = document.getElementById('tabBtnFunctions');
+        const tabBtnPoints = document.getElementById('tabBtnPoints');
+        const tabFunctions = document.getElementById('tabFunctions');
+        const tabPoints = document.getElementById('tabPoints');
+        const pointCountBadge = document.getElementById('pointCountBadge');
+
+        const formAddFunction = document.getElementById('formAddFunction');
+        const inputFormula = document.getElementById('inputFormula');
+        const inputFuncColor = document.getElementById('inputFuncColor');
+        const inputFuncWidth = document.getElementById('inputFuncWidth');
+        const functionsList = document.getElementById('functionsList');
+
+        const formAddPoint = document.getElementById('formAddPoint');
+        const inputPointLabel = document.getElementById('inputPointLabel');
+        const inputPointX = document.getElementById('inputPointX');
+        const inputPointY = document.getElementById('inputPointY');
+        const pointsTableBody = document.getElementById('pointsTableBody');
+        const emptyPointsNotice = document.getElementById('emptyPointsNotice');
+
+        const themeToggle = document.getElementById('themeToggle');
+        const btnExportCsv = document.getElementById('btnExportCsv');
+        const btnExportJson = document.getElementById('btnExportJson');
+
+        // --- Alphabetical Label Generator (A, B, ... Z, A_1, B_1, ...) ---
+        function generatePointLabel(index) {
+            const letterIndex = index % 26;
+            const cycle = Math.floor(index / 26);
+            const letter = String.fromCharCode(65 + letterIndex); // 'A' + offset
+            return cycle === 0 ? letter : `${letter}_{${cycle}}`;
+        }
+
+        // --- Aspect Ratio 1:1 Enforcement ---
+        function enforceSquareAspectRatio() {
+            const rect = canvas.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+
+            const xSpan = state.bounds.xMax - state.bounds.xMin;
+            const yCenter = (state.bounds.yMin + state.bounds.yMax) / 2;
+            const ySpan = xSpan * (rect.height / rect.width);
+
+            state.bounds.yMin = yCenter - ySpan / 2;
+            state.bounds.yMax = yCenter + ySpan / 2;
+        }
+
+        // --- Init & Canvas Setup ---
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            enforceSquareAspectRatio();
+            renderGraph();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- LaTeX Formatter Helper ---
+        function formulaToLaTeX(rawEq) {
+            let latex = rawEq
+                .replace(/\*/g, ' \\cdot ')
+                .replace(/\^([0-9a-zA-Z]+|\([^)]+\))/g, '^{$1}')
+                .replace(/\bsqrt\(([^)]+)\)/g, '\\sqrt{$1}')
+                .replace(/\babs\(([^)]+)\)/g, '|$1|');
+            return latex;
+        }
+
+        function renderLaTeXHover(x, y) {
+            if (window.katex) {
+                katex.render(`(x, y) = (${x.toFixed(2)}, ${y.toFixed(2)})`, coordText, {
+                    throwOnError: false,
+                    displayMode: false
+                });
+            } else {
+                coordText.textContent = `X: ${x.toFixed(2)}, Y: ${y.toFixed(2)}`;
+            }
+        }
+
+        // --- Coordinate Transformation Helpers ---
+        function getCanvasDimensions() {
+            const rect = canvas.getBoundingClientRect();
+            return { width: rect.width, height: rect.height };
+        }
+
+        function mathToScreen(x, y) {
+            const { width, height } = getCanvasDimensions();
+            const px = ((x - state.bounds.xMin) / (state.bounds.xMax - state.bounds.xMin)) * width;
+            const py = height - ((y - state.bounds.yMin) / (state.bounds.yMax - state.bounds.yMin)) * height;
+            return { x: px, y: py };
+        }
+
+        function screenToMath(px, py) {
+            const { width, height } = getCanvasDimensions();
+            const x = state.bounds.xMin + (px / width) * (state.bounds.xMax - state.bounds.xMin);
+            const y = state.bounds.yMin + ((height - py) / height) * (state.bounds.yMax - state.bounds.yMin);
+            return { x: parseFloat(x.toFixed(3)), y: parseFloat(y.toFixed(3)) };
+        }
+
+        function getNiceStep(range) {
+            const rawStep = range / 8;
+            const mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const residual = rawStep / mag;
+            if (residual < 1.5) return 1 * mag;
+            if (residual < 3.5) return 2 * mag;
+            if (residual < 7.5) return 5 * mag;
+            return 10 * mag;
+        }
+
+        function snapToGridCoords(mathX, mathY, step) {
+            const snappedX = Math.round(mathX / step) * step;
+            const snappedY = Math.round(mathY / step) * step;
+            return {
+                x: parseFloat(snappedX.toFixed(4)),
+                y: parseFloat(snappedY.toFixed(4))
+            };
+        }
+
+        // --- Marching Squares Algorithm for Implicit Curve Plotting ---
+        function plotImplicitCurve(evalDiffFn, color, widthSetting) {
+            const { width, height } = getCanvasDimensions();
+            const cols = Math.floor(width / 4);
+            const rows = Math.floor(height / 4);
+
+            const gridValues = new Float64Array((cols + 1) * (rows + 1));
+
+            for (let j = 0; j <= rows; j++) {
+                const py = (j / rows) * height;
+                const mathY = state.bounds.yMin + ((height - py) / height) * (state.bounds.yMax - state.bounds.yMin);
+
+                for (let i = 0; i <= cols; i++) {
+                    const px = (i / cols) * width;
+                    const mathX = state.bounds.xMin + (px / width) * (state.bounds.xMax - state.bounds.xMin);
+                    
+                    let val = evalDiffFn(mathX, mathY);
+                    if (isNaN(val) || !isFinite(val)) val = NaN;
+                    gridValues[j * (cols + 1) + i] = val;
+                }
+            }
+
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = widthSetting * 1.5;
+
+            function lerp(v1, v2) {
+                if (Math.abs(v1 - v2) < 1e-9) return 0.5;
+                const t = -v1 / (v2 - v1);
+                return Math.max(0, Math.min(1, t));
+            }
+
+            for (let j = 0; j < rows; j++) {
+                for (let i = 0; i < cols; i++) {
+                    const idx0 = j * (cols + 1) + i;
+                    const idx1 = idx0 + 1;
+                    const idx3 = (j + 1) * (cols + 1) + i;
+                    const idx2 = idx3 + 1;
+
+                    const v0 = gridValues[idx0];
+                    const v1 = gridValues[idx1];
+                    const v2 = gridValues[idx2];
+                    const v3 = gridValues[idx3];
+
+                    if (isNaN(v0) || isNaN(v1) || isNaN(v2) || isNaN(v3)) continue;
+
+                    let cellCode = 0;
+                    if (v0 > 0) cellCode |= 8;
+                    if (v1 > 0) cellCode |= 4;
+                    if (v2 > 0) cellCode |= 2;
+                    if (v3 > 0) cellCode |= 1;
+
+                    if (cellCode === 0 || cellCode === 15) continue;
+
+                    const x0 = (i / cols) * width;
+                    const x1 = ((i + 1) / cols) * width;
+                    const y0 = (j / rows) * height;
+                    const y1 = ((j + 1) / rows) * height;
+
+                    const top = { x: x0 + lerp(v0, v1) * (x1 - x0), y: y0 };
+                    const right = { x: x1, y: y0 + lerp(v1, v2) * (y1 - y0) };
+                    const bottom = { x: x0 + lerp(v3, v2) * (x1 - x0), y: y1 };
+                    const left = { x: x0, y: y0 + lerp(v0, v3) * (y1 - y0) };
+
+                    switch (cellCode) {
+                        case 1:  case 14: drawLineSegment(left, bottom); break;
+                        case 2:  case 13: drawLineSegment(bottom, right); break;
+                        case 3:  case 12: drawLineSegment(left, right); break;
+                        case 4:  case 11: drawLineSegment(top, right); break;
+                        case 5:           drawLineSegment(left, top); drawLineSegment(bottom, right); break;
+                        case 6:  case 9:  drawLineSegment(top, bottom); break;
+                        case 7:  case 8:  drawLineSegment(left, top); break;
+                        case 10:          drawLineSegment(top, right); drawLineSegment(left, bottom); break;
+                    }
+                }
+            }
+
+            ctx.stroke();
+        }
+
+        function drawLineSegment(p1, p2) {
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+        }
+
+        // --- Main Canvas Rendering Engine (Presentation Optimized) ---
+        function renderGraph() {
+            const { width, height } = getCanvasDimensions();
+            const isDark = document.documentElement.classList.contains('dark');
+
+            // Clear background
+            ctx.fillStyle = isDark ? '#020617' : '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+
+            // Step calculation for 1:1 scale grid
+            const xStep = getNiceStep(state.bounds.xMax - state.bounds.xMin);
+            const yStep = xStep;
+
+            // Styling colors & presentation sizes
+            const gridColor = isDark ? 'rgba(71, 85, 105, 0.5)' : 'rgba(203, 213, 225, 0.9)';
+            const axisColor = isDark ? '#f8fafc' : '#0f172a';
+            const labelColor = isDark ? '#cbd5e1' : '#334155';
+
+            // 1. Draw Grid Lines & Presentation Labels (Beamer Size)
+            ctx.font = 'bold 18px Fira Code, monospace';
+            ctx.fillStyle = labelColor;
+
+            // X-Grid & Ticks
+            const firstX = Math.ceil(state.bounds.xMin / xStep) * xStep;
+            for (let x = firstX; x <= state.bounds.xMax; x += xStep) {
+                const screenPt = mathToScreen(x, 0);
+                const isAxis = Math.abs(x) < 1e-9;
+                
+                ctx.beginPath();
+                ctx.strokeStyle = isAxis ? axisColor : gridColor;
+                ctx.lineWidth = isAxis ? 3 : 1.5;
+                ctx.moveTo(screenPt.x, 0);
+                ctx.lineTo(screenPt.x, height);
+                ctx.stroke();
+
+                if (!isAxis) {
+                    const originScreen = mathToScreen(0, 0);
+                    let labelY = originScreen.y + 24;
+                    if (labelY < 25) labelY = 25;
+                    if (labelY > height - 10) labelY = height - 10;
+                    
+                    ctx.textAlign = 'center';
+                    ctx.fillText(Number(x.toFixed(4)), screenPt.x, labelY);
+                }
+            }
+
+            // Y-Grid & Ticks
+            const firstY = Math.ceil(state.bounds.yMin / yStep) * yStep;
+            for (let y = firstY; y <= state.bounds.yMax; y += yStep) {
+                const screenPt = mathToScreen(0, y);
+                const isAxis = Math.abs(y) < 1e-9;
+
+                ctx.beginPath();
+                ctx.strokeStyle = isAxis ? axisColor : gridColor;
+                ctx.lineWidth = isAxis ? 3 : 1.5;
+                ctx.moveTo(0, screenPt.y);
+                ctx.lineTo(width, screenPt.y);
+                ctx.stroke();
+
+                if (!isAxis) {
+                    const originScreen = mathToScreen(0, 0);
+                    let labelX = originScreen.x - 10;
+                    if (labelX < 35) labelX = 35;
+                    if (labelX > width - 15) labelX = width - 15;
+
+                    ctx.textAlign = 'right';
+                    ctx.fillText(Number(y.toFixed(4)), labelX, screenPt.y + 6);
+                }
+            }
+
+            // Origin Label (0,0)
+            const originPt = mathToScreen(0, 0);
+            if (originPt.x >= 0 && originPt.x <= width && originPt.y >= 0 && originPt.y <= height) {
+                ctx.textAlign = 'right';
+                ctx.fillText('0', originPt.x - 8, originPt.y + 22);
+            }
+
+            // 2. Render Functions / Equations Curves
+            state.functions.forEach(fn => {
+                if (!fn.visible) return;
+                plotImplicitCurve(fn.evalDiffFn, fn.color, fn.width);
+            });
+
+            // 3. Render Snap-to-Grid Target Highlight
+            if (state.snapToGrid && state.snappedHoverPt && !state.hoverPoint) {
+                const snapScreen = mathToScreen(state.snappedHoverPt.x, state.snappedHoverPt.y);
+                ctx.beginPath();
+                ctx.arc(snapScreen.x, snapScreen.y, 12, 0, Math.PI * 2);
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([4, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.beginPath();
+                ctx.arc(snapScreen.x, snapScreen.y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#10b981';
+                ctx.fill();
+            }
+
+            // 4. Render Canvas Points
+            state.points.forEach(pt => {
+                const screenPt = mathToScreen(pt.x, pt.y);
+                const isHovered = state.hoverPoint && state.hoverPoint.id === pt.id;
+
+                if (isHovered) {
+                    ctx.beginPath();
+                    ctx.arc(screenPt.x, screenPt.y, 16, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.35)';
+                    ctx.fill();
+                }
+
+                ctx.beginPath();
+                ctx.arc(screenPt.x, screenPt.y, isHovered ? 10 : 8, 0, Math.PI * 2);
+                ctx.fillStyle = pt.color || '#3b82f6';
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = isDark ? '#0f172a' : '#ffffff';
+                ctx.stroke();
+            });
+
+            // 5. Render KaTeX Point Overlay Labels
+            renderKaTeXOverlay();
+        }
+
+        // --- Render LaTeX Overlay Labels over Canvas ---
+        function renderKaTeXOverlay() {
+            katexOverlay.innerHTML = '';
+            const { width, height } = getCanvasDimensions();
+
+            state.points.forEach(pt => {
+                const screenPt = mathToScreen(pt.x, pt.y);
+                if (screenPt.x < -50 || screenPt.x > width + 50 || screenPt.y < -50 || screenPt.y > height + 50) return;
+
+                const div = document.createElement('div');
+                div.className = 'point-latex-label font-bold';
+                div.style.left = `${screenPt.x}px`;
+                div.style.top = `${screenPt.y}px`;
+
+                const latexText = `${pt.name} = (${pt.x}, ${pt.y})`;
+                if (window.katex) {
+                    katex.render(latexText, div, { throwOnError: false, displayMode: false });
+                } else {
+                    div.textContent = `${pt.name} (${pt.x}, ${pt.y})`;
+                }
+
+                katexOverlay.appendChild(div);
+            });
+        }
+
+        // --- Equation Parsing Engine ---
+        function parseEquationToDiffFn(rawEq) {
+            let leftSide = rawEq;
+            let rightSide = '0';
+
+            if (rawEq.includes('=')) {
+                const parts = rawEq.split('=');
+                leftSide = parts[0].trim();
+                rightSide = parts[1].trim();
+            }
+
+            function sanitizeExpr(expr) {
+                return expr
+                    .replace(/\^/g, '**')
+                    .replace(/\bsqrt\b/gi, 'Math.sqrt')
+                    .replace(/\babs\b/gi, 'Math.abs')
+                    .replace(/\bfloor\b/gi, 'Math.floor')
+                    .replace(/\bceil\b/gi, 'Math.ceil');
+            }
+
+            const cleanLeft = sanitizeExpr(leftSide);
+            const cleanRight = sanitizeExpr(rightSide);
+
+            return new Function('x', 'y', `
+                try {
+                    const lhs = ${cleanLeft};
+                    const rhs = ${cleanRight};
+                    return lhs - rhs;
+                } catch(e) {
+                    return NaN;
+                }
+            `);
+        }
+
+        // --- Interactive Mouse & Pan Event Listeners ---
+
+        chkSnapToGrid.addEventListener('change', (e) => {
+            state.snapToGrid = e.target.checked;
+            renderGraph();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
+            let mathCoords = screenToMath(px, py);
+
+            const xStep = getNiceStep(state.bounds.xMax - state.bounds.xMin);
+            const snapped = snapToGridCoords(mathCoords.x, mathCoords.y, xStep);
+
+            if (state.snapToGrid) {
+                const snapScreen = mathToScreen(snapped.x, snapped.y);
+                const distToSnap = Math.hypot(snapScreen.x - px, snapScreen.y - py);
+                if (distToSnap < 30) {
+                    state.snappedHoverPt = snapped;
+                    mathCoords = snapped;
+                } else {
+                    state.snappedHoverPt = null;
+                }
+            } else {
+                state.snappedHoverPt = null;
+            }
+
+            renderLaTeXHover(mathCoords.x, mathCoords.y);
+
+            if (state.isDragging) {
+                const dxPx = px - state.dragStart.x;
+                const dyPx = py - state.dragStart.y;
+
+                if (Math.hypot(dxPx, dyPx) > 3) {
+                    state.hasDragged = true;
+                }
+
+                const { width, height } = getCanvasDimensions();
+                const xSpan = state.boundsOnDragStart.xMax - state.boundsOnDragStart.xMin;
+                const ySpan = state.boundsOnDragStart.yMax - state.boundsOnDragStart.yMin;
+
+                const dxMath = (dxPx / width) * xSpan;
+                const dyMath = (dyPx / height) * ySpan;
+
+                state.bounds.xMin = state.boundsOnDragStart.xMin - dxMath;
+                state.bounds.xMax = state.boundsOnDragStart.xMax - dxMath;
+                state.bounds.yMin = state.boundsOnDragStart.yMin + dyMath;
+                state.bounds.yMax = state.boundsOnDragStart.yMax + dyMath;
+
+                updateBoundsInputsUI();
+                renderGraph();
+                return;
+            }
+
+            const hoverRadius = 14;
+            const foundPoint = state.points.find(pt => {
+                const screenPt = mathToScreen(pt.x, pt.y);
+                const dist = Math.hypot(screenPt.x - px, screenPt.y - py);
+                return dist <= hoverRadius;
+            });
+
+            if (foundPoint !== state.hoverPoint) {
+                state.hoverPoint = foundPoint || null;
+                renderGraph();
+            } else if (state.snapToGrid) {
+                renderGraph();
+            }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0) {
+                const rect = canvas.getBoundingClientRect();
+                state.dragStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                state.boundsOnDragStart = { ...state.bounds };
+                state.isDragging = true;
+                state.hasDragged = false;
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (e.button === 0) {
+                const rect = canvas.getBoundingClientRect();
+                const px = e.clientX - rect.left;
+                const py = e.clientY - rect.top;
+
+                if (!state.hasDragged) {
+                    if (state.hoverPoint) {
+                        showToast(`Point ${state.hoverPoint.name}: (${state.hoverPoint.x}, ${state.hoverPoint.y})`);
+                    } else {
+                        const targetPt = (state.snapToGrid && state.snappedHoverPt) ? state.snappedHoverPt : screenToMath(px, py);
+                        addPoint(targetPt.x, targetPt.y);
+                        if (canvasTip) canvasTip.style.display = 'none';
+                    }
+                }
+
+                state.isDragging = false;
+                state.hasDragged = false;
+            }
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            state.isDragging = false;
+            state.hasDragged = false;
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const mouseMathX = screenToMath(px, rect.height / 2).x;
+
+            const zoomFactor = e.deltaY < 0 ? 0.85 : 1.15;
+            const xSpan = (state.bounds.xMax - state.bounds.xMin) * zoomFactor;
+
+            const rx = px / rect.width;
+            state.bounds.xMin = mouseMathX - rx * xSpan;
+            state.bounds.xMax = mouseMathX + (1 - rx) * xSpan;
+
+            enforceSquareAspectRatio();
+            updateBoundsInputsUI();
+            renderGraph();
+        }, { passive: false });
+
+        // --- Point Management ---
+        function addPoint(x, y, customLabel = '') {
+            const name = customLabel.trim() || generatePointLabel(state.nextPointIndex++);
+            const newPt = {
+                id: Date.now() + Math.random(),
+                name: name,
+                x: parseFloat(x),
+                y: parseFloat(y),
+                color: '#3b82f6'
+            };
+            state.points.push(newPt);
+            renderPointsTable();
+            renderGraph();
+            showToast(`Added Point ${newPt.name} at (${newPt.x}, ${newPt.y})`);
+        }
+
+        function removePoint(id) {
+            state.points = state.points.filter(pt => pt.id !== id);
+            renderPointsTable();
+            renderGraph();
+            showToast(`Removed point`);
+        }
+
+        function updatePointVal(id, field, value) {
+            const pt = state.points.find(p => p.id === id);
+            if (pt) {
+                if (field === 'name') {
+                    pt.name = value || pt.name;
+                } else {
+                    const numVal = parseFloat(value);
+                    if (!isNaN(numVal)) pt[field] = numVal;
+                }
+                renderPointsTable();
+                renderGraph();
+            }
+        }
+
+        function renderPointsTable() {
+            pointCountBadge.textContent = state.points.length;
+            pointsTableBody.innerHTML = '';
+
+            if (state.points.length === 0) {
+                emptyPointsNotice.classList.remove('hidden');
+                return;
+            }
+            emptyPointsNotice.classList.add('hidden');
+
+            state.points.forEach(pt => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-700/30 transition';
+                tr.innerHTML = `
+                    <td class="py-2 px-1 text-center font-bold">
+                        <div class="latex-name-cell cursor-pointer py-1 text-brand-600 dark:text-brand-400"></div>
+                        <input type="text" value="${pt.name}" data-id="${pt.id}" data-field="name"
+                               class="pt-name-input hidden w-full text-center font-bold text-xs bg-white dark:bg-slate-900 border border-brand-500 rounded px-1 py-0.5">
+                    </td>
+                    <td class="py-2 px-2">
+                        <input type="number" step="any" value="${pt.x}" data-id="${pt.id}" data-field="x"
+                               class="pt-input w-full font-bold text-xs bg-transparent px-1 py-0.5 border-b border-transparent focus:border-brand-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition">
+                    </td>
+                    <td class="py-2 px-2">
+                        <input type="number" step="any" value="${pt.y}" data-id="${pt.id}" data-field="y"
+                               class="pt-input w-full font-bold text-xs bg-transparent px-1 py-0.5 border-b border-transparent focus:border-brand-500 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition">
+                    </td>
+                    <td class="py-2 px-1 text-center">
+                        <button class="btn-del-pt text-slate-400 hover:text-rose-500 p-1 transition" data-id="${pt.id}" title="Delete Point">
+                            <i class="fa-solid fa-xmark text-base"></i>
+                        </button>
+                    </td>
+                `;
+                pointsTableBody.appendChild(tr);
+
+                const latexCell = tr.querySelector('.latex-name-cell');
+                const nameInput = tr.querySelector('.pt-name-input');
+                if (window.katex) {
+                    katex.render(pt.name, latexCell, { throwOnError: false, displayMode: false });
+                } else {
+                    latexCell.textContent = pt.name;
+                }
+
+                latexCell.addEventListener('click', () => {
+                    latexCell.classList.add('hidden');
+                    nameInput.classList.remove('hidden');
+                    nameInput.focus();
+                });
+
+                nameInput.addEventListener('blur', () => {
+                    updatePointVal(pt.id, 'name', nameInput.value);
+                });
+                nameInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') nameInput.blur();
+                });
+            });
+
+            document.querySelectorAll('.pt-input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const id = parseFloat(e.target.dataset.id);
+                    const field = e.target.dataset.field;
+                    updatePointVal(id, field, e.target.value);
+                });
+            });
+
+            document.querySelectorAll('.btn-del-pt').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseFloat(e.currentTarget.dataset.id);
+                    removePoint(id);
+                });
+            });
+        }
+
+        formAddPoint.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const xVal = inputPointX.value;
+            const yVal = inputPointY.value;
+            const labelVal = inputPointLabel.value;
+            if (xVal !== '' && yVal !== '') {
+                addPoint(xVal, yVal, labelVal);
+                inputPointX.value = '';
+                inputPointY.value = '';
+                inputPointLabel.value = '';
+                inputPointX.focus();
+            }
+        });
+
+        // --- Function/Equation Management ---
+        function addEquation(formulaStr, color, widthVal) {
+            if (!formulaStr) return;
+
+            try {
+                const evalDiffFn = parseEquationToDiffFn(formulaStr);
+                evalDiffFn(1, 1);
+
+                const latexFormula = formulaToLaTeX(formulaStr);
+
+                const newFunc = {
+                    id: state.nextFuncId++,
+                    rawFormula: formulaStr,
+                    latexFormula: latexFormula,
+                    evalDiffFn: evalDiffFn,
+                    color: color || inputFuncColor.value,
+                    width: parseFloat(widthVal || inputFuncWidth.value),
+                    visible: true
+                };
+
+                state.functions.push(newFunc);
+                renderFunctionsList();
+                renderGraph();
+                showToast(`Plotted ${formulaStr}`);
+            } catch (err) {
+                showToast(`Invalid Equation Syntax!`, 'error');
+            }
+        }
+
+        formAddFunction.addEventListener('submit', (e) => {
+            e.preventDefault();
+            addEquation(inputFormula.value.trim());
+            inputFormula.value = '';
+        });
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const eq = btn.dataset.eq;
+                inputFormula.value = eq;
+                addEquation(eq);
+            });
+        });
+
+        function renderFunctionsList() {
+            functionsList.innerHTML = '';
+            if (state.functions.length === 0) {
+                functionsList.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">No equations added yet.</div>`;
+                return;
+            }
+
+            state.functions.forEach(fn => {
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3 transition ${!fn.visible ? 'opacity-50' : ''}`;
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <button class="btn-toggle-fn p-1 text-slate-400 hover:text-brand-500 transition" data-id="${fn.id}">
+                            <i class="fa-solid ${fn.visible ? 'fa-eye text-brand-500 text-lg' : 'fa-eye-slash text-lg'}"></i>
+                        </button>
+                        <span class="w-4 h-4 rounded-full flex-none shadow-sm" style="background-color: ${fn.color}"></span>
+                        <div class="latex-eq-container overflow-x-auto py-1 text-sm font-semibold text-slate-800 dark:text-slate-100" data-latex="${escapeHtml(fn.latexFormula)}"></div>
+                    </div>
+                    <button class="btn-del-fn text-slate-400 hover:text-rose-500 p-1 transition" data-id="${fn.id}" title="Remove Function">
+                        <i class="fa-solid fa-trash-can text-sm"></i>
+                    </button>
+                `;
+                functionsList.appendChild(div);
+
+                const latexElem = div.querySelector('.latex-eq-container');
+                if (window.katex) {
+                    katex.render(fn.latexFormula, latexElem, { throwOnError: false, displayMode: false });
+                } else {
+                    latexElem.textContent = fn.rawFormula;
+                }
+            });
+
+            document.querySelectorAll('.btn-toggle-fn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.dataset.id);
+                    const fn = state.functions.find(f => f.id === id);
+                    if (fn) {
+                        fn.visible = !fn.visible;
+                        renderFunctionsList();
+                        renderGraph();
+                    }
+                });
+            });
+
+            document.querySelectorAll('.btn-del-fn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.dataset.id);
+                    state.functions = state.functions.filter(f => f.id !== id);
+                    renderFunctionsList();
+                    renderGraph();
+                    showToast('Equation layer removed');
+                });
+            });
+        }
+
+        // --- Controls & Bounds Inputs ---
+        function updateBoundsInputsUI() {
+            xMinInput.value = Number(state.bounds.xMin.toFixed(2));
+            xMaxInput.value = Number(state.bounds.xMax.toFixed(2));
+        }
+
+        btnApplyBounds.addEventListener('click', () => {
+            const xMin = parseFloat(xMinInput.value);
+            const xMax = parseFloat(xMaxInput.value);
+
+            if (isNaN(xMin) || isNaN(xMax) || xMin >= xMax) {
+                showToast('Invalid bounds input!', 'error');
+                return;
+            }
+
+            state.bounds.xMin = xMin;
+            state.bounds.xMax = xMax;
+            enforceSquareAspectRatio();
+            renderGraph();
+            showToast('Graph bounds updated (1:1 Ratio)');
+        });
+
+        btnResetView.addEventListener('click', () => {
+            state.bounds.xMin = -10;
+            state.bounds.xMax = 10;
+            enforceSquareAspectRatio();
+            updateBoundsInputsUI();
+            renderGraph();
+            showToast('Reset view to default 1:1 square ratio');
+        });
+
+        btnClearPoints.addEventListener('click', () => {
+            if (state.points.length === 0) return;
+            state.points = [];
+            state.nextPointIndex = 0;
+            renderPointsTable();
+            renderGraph();
+            showToast('All points cleared');
+        });
+
+        // --- Tabs Navigation ---
+        tabBtnFunctions.addEventListener('click', () => {
+            tabFunctions.classList.remove('hidden');
+            tabPoints.classList.add('hidden');
+            
+            tabBtnFunctions.className = "flex-1 py-2 rounded-lg text-center bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-400 shadow-sm transition";
+            tabBtnPoints.className = "flex-1 py-2 rounded-lg text-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition";
+        });
+
+        tabBtnPoints.addEventListener('click', () => {
+            tabPoints.classList.remove('hidden');
+            tabFunctions.classList.add('hidden');
+
+            tabBtnPoints.className = "flex-1 py-2 rounded-lg text-center bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-400 shadow-sm transition";
+            tabBtnFunctions.className = "flex-1 py-2 rounded-lg text-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition";
+        });
+
+        // --- Theme Switcher ---
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            renderGraph();
+        });
+
+        // --- Data Export Features ---
+        btnExportCsv.addEventListener('click', () => {
+            if (state.points.length === 0) {
+                showToast('No points to export!', 'error');
+                return;
+            }
+            let csvContent = "Point_Label,X_Coordinate,Y_Coordinate\n";
+            state.points.forEach(pt => {
+                csvContent += `${pt.name},${pt.x},${pt.y}\n`;
+            });
+            downloadFile(csvContent, 'plot_points.csv', 'text/csv');
+            showToast('Exported CSV file');
+        });
+
+        btnExportJson.addEventListener('click', () => {
+            const exportData = {
+                bounds: state.bounds,
+                points: state.points.map(p => ({ label: p.name, x: p.x, y: p.y })),
+                equations: state.functions.map(f => ({ formula: f.rawFormula, color: f.color, width: f.width }))
+            };
+            const jsonStr = JSON.stringify(exportData, null, 2);
+            downloadFile(jsonStr, 'graph_data.json', 'application/json');
+            showToast('Exported JSON data');
+        });
+
+        function downloadFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- Toast Notification Helper ---
+        let toastTimeout;
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = message;
+            if (type === 'error') {
+                toastIcon.className = 'fa-solid fa-triangle-exclamation text-rose-400';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-info text-brand-400';
+            }
+
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // --- Initial Load Setup ---
+        window.onload = function() {
+            resizeCanvas();
+            renderPointsTable();
+
+            addEquation('x^2 + y^2 = 25', '#ef4444', 2.5);
+            addEquation('y + x = 5', '#3b82f6', 2.5);
+            
+            renderLaTeXHover(0, 0);
+            renderGraph();
+        };
+    </script>
+</body>
+</html>
